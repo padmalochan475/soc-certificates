@@ -1,0 +1,5 @@
+{
+  "name": "TAT Dynamic Internship & Certificate System",
+  "description": "A fully dynamic, interactive, and no-code-driven platform for internship application management, smart form generation, dynamic certificate creation, real-time tracking, and verification.",
+  "requestFramePermissions": ["camera", "microphone", "geolocation"]
+}

@@ -1,0 +1,179 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {uid}
+    // Fields:
+    //   - uid: string (required)
+    //   - role: string (optional, ADMIN|HOD|VERIFIER)
+    //   - name: string (required)
+    //   - email: string (required)
+    //   - employeeId: string (optional)
+    //   - isApproved: bool (optional, default false)
+    //   - department: string (optional)
+    //   - signatureBase64: string (optional)
+    //
+    // Collection: templates
+    // Document ID: {templateId}
+    // Fields:
+    //   - templateId: string (required)
+    //   - name: string (required)
+    //   - version: number (required)
+    //   - content: string (required)
+    //   - schema: list (required)
+    //   - isActive: bool (required)
+    //
+    // Collection: applications
+    // Document ID: {trackingId}
+    // Fields:
+    //   - trackingId: string (required)
+    //   - studentEmail: string (required)
+    //   - templateId: string (required)
+    //   - department: string (required)
+    //   - status: string (required, PENDING|APPROVED|REJECTED)
+    //   - formData: map (required)
+    //   - securityHash: string (optional)
+    //   - timestamps: map (required)
+    //
+    // Collection: companies
+    // Document ID: {id}
+    // Fields:
+    //   - id: string (required)
+    //   - name: string (required)
+    //   - designation: string (required)
+    //   - address: string (required)
+    //
+    // Collection: branches
+    // Document ID: {id}
+    // Fields:
+    //   - id: string (required)
+    //   - name: string (required)
+    //   - code: string (required)
+    //   - hodName: string (optional)
+    //   - hodEmail: string (optional)
+    //   - hodMobile: string (optional)
+    //
+    // Collection: durations
+    // Document ID: {id}
+    // Fields:
+    //   - id: string (required)
+    //   - name: string (required)
+    //
+    // Collection: start_dates
+    // Document ID: {id}
+    // Fields:
+    //   - id: string (required)
+    //   - name: string (required)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'ADMIN' && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isApproved == true) ||
+        (request.auth.token.email == "padmalochan.mmaharana@gmail.com" && request.auth.token.email_verified == true)
+      );
+    }
+
+    function isApproved() {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isApproved == true;
+    }
+
+    function isHOD() {
+      return isApproved() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'HOD';
+    }
+
+    function getHODDepartment() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.department;
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // ===============================================================
+    // Collection Rules
+    // ===============================================================
+
+    match /users/{uid} {
+      allow read: if isAuthenticated() && (request.auth.uid == uid || isAdmin());
+      allow create: if isAuthenticated() && request.auth.uid == uid && 
+        !('role' in request.resource.data) && 
+        !('isApproved' in request.resource.data);
+      allow update: if isAdmin() || (
+        isAuthenticated() && request.auth.uid == uid && 
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'isApproved'])
+      );
+    }
+
+    match /templates/{templateId} {
+      allow read: if true; // Publicly readable for students to apply
+      allow write: if isAdmin();
+    }
+
+    match /applications/{trackingId} {
+      allow create: if 
+        hasOnlyAllowedFields(['trackingId', 'studentEmail', 'templateId', 'department', 'status', 'formData', 'timestamps']) &&
+        request.resource.data.status == 'PENDING' &&
+        isValidEmail(request.resource.data.studentEmail) &&
+        request.resource.data.trackingId == trackingId;
+      
+      allow read: if true; // Publicly readable for tracking and verification
+      
+      allow update: if isAdmin() || (
+        isHOD() && 
+        resource.data.department == getHODDepartment() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'securityHash', 'timestamps'])
+      );
+      
+      allow delete: if isAdmin();
+    }
+
+    match /companies/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /branches/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /sessions/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /academic_years/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /durations/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /start_dates/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}

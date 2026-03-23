@@ -1,0 +1,173 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "System users (Admin, HOD, Verifier)",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "role": { "type": "string", "enum": ["ADMIN", "HOD", "VERIFIER"] },
+        "department": { "type": "string", "description": "Department name (e.g., CSE, IT)" },
+        "name": { "type": "string", "description": "Full name" },
+        "email": { "type": "string", "description": "User email" },
+        "employeeId": { "type": "string", "description": "College Employee ID" },
+        "isApproved": { "type": "boolean", "description": "Whether the user is approved by admin" },
+        "signatureBase64": { "type": "string", "description": "Base64 encoded signature image" }
+      },
+      "required": ["uid", "name", "email"]
+    },
+    "Template": {
+      "title": "Template",
+      "description": "Certificate and form templates",
+      "type": "object",
+      "properties": {
+        "templateId": { "type": "string" },
+        "name": { "type": "string" },
+        "version": { "type": "integer" },
+        "content": { "type": "string", "description": "HTML/Text content with placeholders" },
+        "schema": { "type": "array", "description": "Array of field definitions" },
+        "isActive": { "type": "boolean" },
+        "allowedDurations": { "type": "array", "items": { "type": "string" } },
+        "allowedStartDates": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["templateId", "name", "content", "schema"]
+    },
+    "Application": {
+      "title": "Application",
+      "description": "Student applications for certificates",
+      "type": "object",
+      "properties": {
+        "trackingId": { "type": "string" },
+        "studentEmail": { "type": "string" },
+        "templateId": { "type": "string" },
+        "department": { "type": "string" },
+        "status": { "type": "string", "enum": ["PENDING", "APPROVED", "REJECTED"] },
+        "formData": { "type": "object" },
+        "securityHash": { "type": "string" },
+        "timestamps": { "type": "object" }
+      },
+      "required": ["trackingId", "studentEmail", "templateId", "department", "status", "formData"]
+    },
+    "Company": {
+      "title": "Company",
+      "description": "Master data for companies",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "designation": { "type": "string" },
+        "address": { "type": "string" }
+      },
+      "required": ["id", "name", "designation", "address"]
+    },
+    "Branch": {
+      "title": "Branch",
+      "description": "Master data for academic branches with HOD info",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "code": { "type": "string" },
+        "hodName": { "type": "string" },
+        "hodEmail": { "type": "string" },
+        "hodMobile": { "type": "string" }
+      },
+      "required": ["id", "name", "code"]
+    },
+    "HODInfo": {
+      "title": "HODInfo",
+      "description": "Master data for HODs",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "mobile": { "type": "string" },
+        "branchId": { "type": "string" }
+      },
+      "required": ["id", "name", "email", "mobile", "branchId"]
+    },
+    "AcademicSession": {
+      "title": "AcademicSession",
+      "description": "Master data for academic sessions",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" }
+      },
+      "required": ["id", "name"]
+    },
+    "AcademicYear": {
+      "title": "AcademicYear",
+      "description": "Master data for academic years",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" }
+      },
+      "required": ["id", "name"]
+    },
+    "Duration": {
+      "title": "Duration",
+      "description": "Master data for internship durations",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" }
+      },
+      "required": ["id", "name"]
+    },
+    "StartDate": {
+      "title": "StartDate",
+      "description": "Master data for internship start dates",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" }
+      },
+      "required": ["id", "name"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/templates/{templateId}": {
+      "schema": "Template",
+      "description": "Certificate templates"
+    },
+    "/applications/{trackingId}": {
+      "schema": "Application",
+      "description": "Student applications"
+    },
+    "/companies/{id}": {
+      "schema": "Company",
+      "description": "Company master data"
+    },
+    "/branches/{id}": {
+      "schema": "Branch",
+      "description": "Branch master data"
+    },
+    "/hod_info/{id}": {
+      "schema": "HODInfo",
+      "description": "HOD master data"
+    },
+    "/sessions/{id}": {
+      "schema": "AcademicSession",
+      "description": "Session master data"
+    },
+    "/academic_years/{id}": {
+      "schema": "AcademicYear",
+      "description": "Academic year master data"
+    },
+    "/durations/{id}": {
+      "schema": "Duration",
+      "description": "Duration master data"
+    },
+    "/start_dates/{id}": {
+      "schema": "StartDate",
+      "description": "Start date master data"
+    }
+  }
+}
